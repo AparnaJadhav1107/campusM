@@ -1,0 +1,1 @@
+import dotenv from "dotenv"; dotenv.config(); import {connectDB} from "./config/db.js"; import {seed,db} from "./services/store.js"; await connectDB(); seed(); console.log("Seed complete:",db.users.length,"users,",db.students.length,"students,",db.complaints.length,"complaints. Admin:",process.env.ADMIN_EMAIL||"admin@campus.edu"); process.exit(0);

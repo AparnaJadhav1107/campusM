@@ -1,0 +1,4 @@
+import {create} from "zustand";
+export const useAuthStore=create(set=>({user:JSON.parse(localStorage.getItem("campus_user")||"null"),token:localStorage.getItem("campus_token"),login:(user,token)=>{localStorage.setItem("campus_token",token);localStorage.setItem("campus_user",JSON.stringify(user));set({user,token})},logout:()=>{localStorage.removeItem("campus_token");localStorage.removeItem("campus_user");set({user:null,token:null})}}));
+export const useUIStore=create(set=>({sidebarOpen:false,toast:null,setSidebar:v=>set({sidebarOpen:v}),showToast:t=>{set({toast:t});setTimeout(()=>set({toast:null}),3200)}}));
+export const useDashboardStore=create(set=>({data:null,setData:d=>set({data:d})})); export const useStudentStore=create(()=>({})); export const useComplaintStore=create(()=>({})); export const useNotificationStore=create(()=>({items:[]})); export const useQueueStore=create(()=>({}));

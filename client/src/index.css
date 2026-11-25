@@ -1,0 +1,15 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+:root{--primary:#FF8900;--secondary:#FFAA45;--light:#FFC078;--peach:#FFE9D2;--bg:#FFF9F3;--ink:#222222;--muted:#888888;--success:#16A36A;--danger:#EF4444}
+*{box-sizing:border-box} html,body,#root{height:100%} body{margin:0;font-family:Inter,system-ui,sans-serif;background:#EFE6DA;color:var(--ink)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+.card{background:#fff;border-radius:1rem;box-shadow:0 1px 3px rgba(34,34,34,.06);padding:1.25rem}
+.btn-primary{background:var(--primary);color:#fff;border-radius:.65rem;padding:.55rem 1rem;font-weight:600;border:none;cursor:pointer;transition:.2s} .btn-primary:hover{background:#e67a00}
+.btn-ghost{background:#fff;border:1px solid #eee;border-radius:.65rem;padding:.55rem 1rem;font-weight:600;cursor:pointer}
+.input{width:100%;border:1px solid #eee;border-radius:.65rem;padding:.55rem .8rem;background:#FAFAF8;font-size:14px;outline:none} .input:focus{border-color:var(--primary)}
+.navlink{display:flex;gap:.7rem;align-items:center;padding:.65rem .9rem;border-radius:.65rem;color:#777;font-weight:500;font-size:14px;text-decoration:none;transition:.2s} .navlink:hover{background:var(--peach);color:var(--ink)} .navlink.active{background:var(--primary);color:#fff}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fade-up{animation:fadeUp .35s ease both}
+@keyframes popIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}} .pop-in{animation:popIn .25s ease both}
+.skeleton{background:linear-gradient(90deg,#f3ece2,#ffe9d2,#f3ece2);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:.75rem;min-height:90px} @keyframes sk{to{background-position:-200% 0}}
+table{width:100%;border-collapse:collapse;font-size:14px} th{text-align:left;color:var(--muted);font-weight:600;padding:.6rem} td{padding:.6rem;border-top:1px solid #f3efe9} tr:hover td{background:#FFF9F3}
+.badge{display:inline-block;padding:.15rem .55rem;border-radius:999px;font-size:12px;font-weight:600;background:var(--peach);color:#9a6200}
+::-webkit-scrollbar{height:8px;width:8px} ::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px}
