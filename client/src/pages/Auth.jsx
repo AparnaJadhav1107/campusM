@@ -1,8 +1,121 @@
-import {useState} from "react"; import {useNavigate,Link} from "react-router-dom"; import {api} from "../services/api.js"; import {useAuthStore} from "../store/index.js"; import {LayoutGrid} from "lucide-react";
-function Shell({children,title,sub}){return <div className="min-h-screen grid place-items-center p-4" style={{background:"#EFE6DA"}}><div className="card w-full max-w-md pop-in"><div className="flex items-center gap-2 mb-4"><span className="bg-primary text-white p-2 rounded-lg"><LayoutGrid size={16}/></span><b>Smart Campus</b></div><h1 className="text-2xl font-extrabold">{title}</h1><p className="text-muted text-sm mb-4">{sub}</p>{children}</div></div>}
-export function Login(){ const [f,setF]=useState({email:"admin@campus.edu",password:"Admin@123"}); const [e,setE]=useState(""); const nav=useNavigate(); const login=useAuthStore(s=>s.login);
- const go=async ev=>{ev.preventDefault(); try{const d=await api("/auth/login",{method:"POST",body:JSON.stringify(f)}); login(d.user,d.token); nav("/");}catch(x){setE(x.message)}};
- return <Shell title="Welcome back" sub="Admin: admin@campus.edu / Admin@123 · Student: student@campus.edu / Student@123 (defaults from server/.env.example)"><form onSubmit={go} className="space-y-3"><input className="input" placeholder="Email" value={f.email} onChange={x=>setF({...f,email:x.target.value})}/><input type="password" className="input" placeholder="Password" value={f.password} onChange={x=>setF({...f,password:x.target.value})}/>{e&&<p className="text-danger text-sm">{e}</p>}<button className="btn-primary w-full">Login</button></form><p className="text-sm text-muted mt-4">New student? <Link className="text-primary font-semibold" to="/register">Register</Link></p></Shell>; }
-export function Register(){ const [f,setF]=useState({name:"",email:"",password:""}); const [e,setE]=useState(""); const nav=useNavigate(); const login=useAuthStore(s=>s.login);
- const go=async ev=>{ev.preventDefault(); try{const d=await api("/auth/register",{method:"POST",body:JSON.stringify(f)}); login(d.user,d.token); nav("/");}catch(x){setE(x.message)}};
- return <Shell title="Student registration" sub="Create your student account. Passwords are hashed with bcrypt on the server."><form onSubmit={go} className="space-y-3"><input className="input" placeholder="Full name" value={f.name} onChange={x=>setF({...f,name:x.target.value})}/><input className="input" placeholder="Email" value={f.email} onChange={x=>setF({...f,email:x.target.value})}/><input type="password" className="input" placeholder="Password" value={f.password} onChange={x=>setF({...f,password:x.target.value})}/>{e&&<p className="text-danger text-sm">{e}</p>}<button className="btn-primary w-full">Register</button></form><p className="text-sm text-muted mt-4">Already registered? <Link className="text-primary font-semibold" to="/login">Login</Link></p></Shell>; }
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { LayoutGrid } from "lucide-react";
+import { api } from "../services/api.js";
+import { useAuthStore } from "../store/index.js";
+
+function Shell({ children, title, sub }) {
+  return (
+    <div className="h-[100dvh] overflow-y-auto grid place-items-center p-4 bg-appbg">
+      <div className="card w-full max-w-[380px] pop-in">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="w-8 h-8 rounded-lg bg-primary text-white grid place-items-center">
+            <LayoutGrid size={15} />
+          </span>
+          <b className="text-[13px]">Smart Campus</b>
+        </div>
+        <h1 className="text-[20px] font-bold">{title}</h1>
+        <p className="text-muted mb-4 mt-0.5">{sub}</p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function Login() {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+
+  const go = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await api("/auth/login", { method: "POST", body: JSON.stringify(form) });
+      login(data.user, data.token);
+      navigate("/");
+    } catch (x) {
+      setError(x.message);
+    }
+  };
+
+  return (
+    <Shell title="Welcome back" sub="Sign in with the account you registered, or the admin account created with npm run seed.">
+      <form onSubmit={go} className="space-y-2.5">
+        <input
+          className="input"
+          placeholder="Email"
+          value={form.email}
+          onChange={(x) => setForm({ ...form, email: x.target.value })}
+        />
+        <input
+          type="password"
+          className="input"
+          placeholder="Password"
+          value={form.password}
+          onChange={(x) => setForm({ ...form, password: x.target.value })}
+        />
+        {error && <p className="text-danger">{error}</p>}
+        <button className="btn-primary w-full">Login</button>
+      </form>
+      <p className="text-muted mt-4">
+        New student?{" "}
+        <Link className="text-primary font-semibold" to="/register">
+          Register
+        </Link>
+      </p>
+    </Shell>
+  );
+}
+
+export function Register() {
+  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
+
+  const go = async (e) => {
+    e.preventDefault();
+    try {
+      const data = await api("/auth/register", { method: "POST", body: JSON.stringify(form) });
+      login(data.user, data.token);
+      navigate("/");
+    } catch (x) {
+      setError(x.message);
+    }
+  };
+
+  return (
+    <Shell title="Student registration" sub="Create your student account. Passwords are hashed with bcrypt on the server.">
+      <form onSubmit={go} className="space-y-2.5">
+        <input
+          className="input"
+          placeholder="Full name"
+          value={form.name}
+          onChange={(x) => setForm({ ...form, name: x.target.value })}
+        />
+        <input
+          className="input"
+          placeholder="Email"
+          value={form.email}
+          onChange={(x) => setForm({ ...form, email: x.target.value })}
+        />
+        <input
+          type="password"
+          className="input"
+          placeholder="Password"
+          value={form.password}
+          onChange={(x) => setForm({ ...form, password: x.target.value })}
+        />
+        {error && <p className="text-danger">{error}</p>}
+        <button className="btn-primary w-full">Register</button>
+      </form>
+      <p className="text-muted mt-4">
+        Already registered?{" "}
+        <Link className="text-primary font-semibold" to="/login">
+          Login
+        </Link>
+      </p>
+    </Shell>
+  );
+}

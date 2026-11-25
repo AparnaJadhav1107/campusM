@@ -1,8 +1,174 @@
-import {useEffect,useState} from "react"; import {api} from "../services/api.js"; import {useAuthStore,useUIStore} from "../store/index.js"; import * as Dialog from "@radix-ui/react-dialog";
-const empty={studentId:"",fullName:"",email:"",phone:"",department:"Computer Science",course:"B.Tech",year:1};
-export default function Students(){ const [items,setItems]=useState([]); const [q,setQ]=useState(""); const [dept,setDept]=useState(""); const [sort,setSort]=useState("studentId"); const [f,setF]=useState(empty); const [open,setOpen]=useState(false); const user=useAuthStore(s=>s.user); const toast=useUIStore(s=>s.showToast);
- const load=()=>api(`/students?search=${encodeURIComponent(q)}&department=${encodeURIComponent(dept)}&sort=${sort}`).then(d=>setItems(d.items)).catch(e=>toast(e.message)); useEffect(()=>{load()},[q,dept,sort]);
- const save=async()=>{try{await api("/students",{method:"POST",body:JSON.stringify(f)}); setOpen(false); setF(empty); load(); toast("Student added (hash table + BST updated)");}catch(e){toast(e.message)}};
- const del=async id=>{if(!confirm("Delete this student?"))return; await api(`/students/${id}`,{method:"DELETE"}); load();};
- return <div className="card overflow-x-auto"><div className="flex gap-2 flex-wrap mb-4"><input className="input max-w-xs" placeholder="Search — try a Student ID like 2021001 (Hash Table lookup)" value={q} onChange={e=>setQ(e.target.value)}/><select className="input max-w-[200px]" value={dept} onChange={e=>setDept(e.target.value)}><option value="">All Departments</option>{["Computer Science","Electronics","Mechanical","Civil","Information Technology"].map(d=><option key={d}>{d}</option>)}</select><select className="input max-w-[160px]" value={sort} onChange={e=>setSort(e.target.value)}><option value="studentId">Sort: ID</option><option value="fullName">Sort: Name</option><option value="department">Sort: Dept</option></select>{user?.role==="admin"&&<Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Trigger className="btn-primary ml-auto">+ Add Student</Dialog.Trigger><Dialog.Portal><Dialog.Overlay className="fixed inset-0 bg-black/40 z-40"/><Dialog.Content className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card w-[min(480px,92vw)] pop-in"><Dialog.Title className="font-bold text-lg mb-3">Add Student</Dialog.Title>{Object.keys(empty).map(k=><input key={k} className="input mb-2" placeholder={k} value={f[k]} onChange={e=>setF({...f,[k]:e.target.value})}/>)}<button className="btn-primary w-full" onClick={save}>Save Student</button></Dialog.Content></Dialog.Portal></Dialog.Root>}</div>
- <table><thead><tr><th>Student ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Course</th><th>Year</th><th>Status</th>{user?.role==="admin"&&<th>Action</th>}</tr></thead><tbody>{items.map(s=><tr key={s.id}><td>{s.studentId}</td><td><b>{s.fullName}</b></td><td>{s.email}</td><td>{s.phone}</td><td>{s.department}</td><td>{s.course}</td><td>{s.year}</td><td><span className="badge">{s.status}</span></td>{user?.role==="admin"&&<td><button className="text-danger font-semibold" onClick={()=>del(s.id)}>Delete</button></td>}</tr>)}</tbody></table>{!items.length&&<p className="text-muted p-4">No students found.</p>}</div>; }
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import * as Dialog from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import { api } from "../services/api.js";
+import { useAuthStore, useUIStore } from "../store/index.js";
+
+const EMPTY_FORM = {
+  studentId: "",
+  fullName: "",
+  email: "",
+  phone: "",
+  department: "",
+  course: "",
+  year: "",
+};
+const DEPARTMENTS = ["Computer Science", "Electronics", "Mechanical", "Civil", "Information Technology"];
+const LABELS = {
+  studentId: "Student ID (number)",
+  fullName: "Full name",
+  email: "Email",
+  phone: "Phone",
+  department: "Department",
+  course: "Course",
+  year: "Year",
+};
+
+export default function Students() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("search") || "");
+  const [dept, setDept] = useState("");
+  const [sort, setSort] = useState("studentId");
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [open, setOpen] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const toast = useUIStore((s) => s.showToast);
+
+  // Header search lands here with ?search= — keep the box in sync.
+  useEffect(() => {
+    setQuery(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  const load = () => {
+    setLoading(true);
+    api(`/students?search=${encodeURIComponent(query)}&department=${encodeURIComponent(dept)}&sort=${sort}`)
+      .then((d) => setItems(d.items))
+      .catch((e) => toast(e.message))
+      .finally(() => setLoading(false));
+  };
+  useEffect(load, [query, dept, sort]);
+
+  const save = async () => {
+    try {
+      await api("/students", { method: "POST", body: JSON.stringify(form) });
+      setOpen(false);
+      setForm(EMPTY_FORM);
+      load();
+      toast("Student added — hash table and BST indexes rebuilt from real records");
+    } catch (e) {
+      toast(e.message);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!confirm("Delete this student?")) return;
+    await api(`/students/${id}`, { method: "DELETE" });
+    load();
+  };
+
+  return (
+    <div className="card">
+      <div className="flex gap-2 flex-wrap mb-3 items-center">
+        <input
+          className="input !w-auto flex-1 min-w-[180px] max-w-xs"
+          placeholder="Search name, email, or Student ID (hash lookup)…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <select className="input !w-auto max-w-[190px]" value={dept} onChange={(e) => setDept(e.target.value)}>
+          <option value="">All Departments</option>
+          {DEPARTMENTS.map((d) => (
+            <option key={d}>{d}</option>
+          ))}
+        </select>
+        <select className="input !w-auto max-w-[150px]" value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="studentId">Sort: ID</option>
+          <option value="fullName">Sort: Name</option>
+          <option value="department">Sort: Dept</option>
+        </select>
+        {user?.role === "admin" && (
+          <Dialog.Root open={open} onOpenChange={setOpen}>
+            <Dialog.Trigger className="btn-primary ml-auto">+ Add Student</Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" data-radix-dialog-overlay />
+              <Dialog.Content className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 card w-[min(440px,92vw)] pop-in max-h-[88dvh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <Dialog.Title className="card-title">Add Student</Dialog.Title>
+                  <Dialog.Close className="text-muted hover:text-ink">
+                    <X size={16} />
+                  </Dialog.Close>
+                </div>
+                {Object.keys(EMPTY_FORM).map((key) => (
+                  <input
+                    key={key}
+                    className="input mb-2"
+                    placeholder={LABELS[key]}
+                    value={form[key]}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                ))}
+                <button className="btn-primary w-full" onClick={save}>
+                  Save Student
+                </button>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="skeleton" />
+      ) : items.length ? (
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Department</th>
+                <th>Course</th>
+                <th>Year</th>
+                <th>Status</th>
+                {user?.role === "admin" && <th>Action</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((s) => (
+                <tr key={s.id}>
+                  <td>{s.studentId}</td>
+                  <td>
+                    <b>{s.fullName}</b>
+                  </td>
+                  <td>{s.email}</td>
+                  <td>{s.phone || "—"}</td>
+                  <td>{s.department || "—"}</td>
+                  <td>{s.course || "—"}</td>
+                  <td>{s.year || "—"}</td>
+                  <td>
+                    <span className="badge">{s.status}</span>
+                  </td>
+                  {user?.role === "admin" && (
+                    <td>
+                      <button className="text-danger font-semibold" onClick={() => remove(s.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-muted py-8 text-center">
+          No students yet — {user?.role === "admin" ? "add the first student with the button above." : "students added by the admin will appear here."}
+        </p>
+      )}
+    </div>
+  );
+}
