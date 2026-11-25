@@ -404,7 +404,7 @@ tbody tr:hover td {
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.97);
+    transform: translateX(18px);
   }
   to {
     opacity: 1;
@@ -412,7 +412,43 @@ tbody tr:hover td {
   }
 }
 .toast-in {
-  animation: toastIn 0.22s ease both;
+  animation: toastIn 0.24s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+.toast-out {
+  animation: toastOut 0.2s ease both;
+}
+
+/* ---------- overflow guards (content area must never scroll sideways) ---------- */
+html,
+body {
+  overflow-x: hidden;
+}
+.app-main-col,
+.app-content,
+.app-content .fade-up {
+  min-width: 0;
+}
+.app-content .grid > * {
+  min-width: 0; /* grid children (cards, charts) can shrink instead of overflowing */
+}
+.app-content img,
+.app-content svg {
+  max-width: 100%;
+}
+.recharts-wrapper,
+.recharts-surface {
+  max-width: 100%;
 }
 
 /* Radix overlay/content transitions */

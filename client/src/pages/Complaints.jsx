@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams, useParams, useNavigate } from "react-router-dom";
+import { MessageSquareWarning, History } from "lucide-react";
 import { api } from "../services/api.js";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import { useAuthStore, useUIStore } from "../store/index.js";
 
 const CATEGORIES = ["Classroom", "Hostel", "Library", "Laboratory", "Transportation", "Other"];
@@ -24,19 +26,20 @@ export function Complaints() {
     setLoading(true);
     api(`/complaints?search=${encodeURIComponent(query)}`)
       .then((d) => setItems(d.items))
-      .catch((e) => toast(e.message))
+      .catch((e) => toast(e.message, "error"))
       .finally(() => setLoading(false));
   };
   useEffect(load, [query]);
 
   const submit = async () => {
+    if (!form.description.trim()) return toast("Please describe the problem first", "error");
     try {
       await api("/complaints", { method: "POST", body: JSON.stringify(form) });
       setForm({ ...form, description: "" });
       load();
-      toast("Complaint submitted — it now appears in the queue and priority heap");
+      toast("Complaint submitted — it is now in the queue", "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
@@ -119,7 +122,11 @@ export function Complaints() {
             </table>
           </div>
         ) : (
-          <p className="text-muted py-8 text-center">No complaints yet — submitted complaints will appear here.</p>
+          <EmptyState
+            icon={MessageSquareWarning}
+            title="No complaints yet"
+            description="Complaints submitted from the form above will appear here."
+          />
         )}
       </div>
     </div>
@@ -135,7 +142,9 @@ export function ComplaintDetail() {
   const navigate = useNavigate();
 
   const load = () => {
-    api(`/complaints/${id}`).then(setComplaint);
+    api(`/complaints/${id}`)
+      .then(setComplaint)
+      .catch((e) => toast(e.message, "error"));
     api(`/complaints/${id}/history`)
       .then(setHistory)
       .catch(() => {});
@@ -152,9 +161,9 @@ export function ComplaintDetail() {
       });
       setComplaint(updated);
       load();
-      toast("Status updated — previous state pushed on the Undo Stack, history appended to the Linked List");
+      toast(`Complaint status updated to ${status}`, "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
@@ -210,7 +219,14 @@ export function ComplaintDetail() {
             </span>
           </div>
         ))}
-        {!history.length && <p className="text-muted">No history yet.</p>}
+        {!history.length && (
+          <EmptyState
+            icon={History}
+            title="No history yet"
+            description="Status changes on this complaint will be recorded here in order."
+            minHeight={120}
+          />
+        )}
       </div>
     </div>
   );

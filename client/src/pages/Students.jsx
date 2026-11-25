@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X, Users } from "lucide-react";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import { api } from "../services/api.js";
 import { useAuthStore, useUIStore } from "../store/index.js";
 
@@ -46,27 +47,34 @@ export default function Students() {
     setLoading(true);
     api(`/students?search=${encodeURIComponent(query)}&department=${encodeURIComponent(dept)}&sort=${sort}`)
       .then((d) => setItems(d.items))
-      .catch((e) => toast(e.message))
+      .catch((e) => toast(e.message, "error"))
       .finally(() => setLoading(false));
   };
   useEffect(load, [query, dept, sort]);
 
   const save = async () => {
+    if (!form.studentId || !form.fullName.trim() || !form.email.trim())
+      return toast("Student ID, full name and email are required", "error");
     try {
       await api("/students", { method: "POST", body: JSON.stringify(form) });
       setOpen(false);
       setForm(EMPTY_FORM);
       load();
-      toast("Student added — hash table and BST indexes rebuilt from real records");
+      toast("Student added successfully", "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
   const remove = async (id) => {
     if (!confirm("Delete this student?")) return;
-    await api(`/students/${id}`, { method: "DELETE" });
-    load();
+    try {
+      await api(`/students/${id}`, { method: "DELETE" });
+      toast("Student deleted", "success");
+      load();
+    } catch (e) {
+      toast(e.message, "error");
+    }
   };
 
   return (
@@ -165,9 +173,17 @@ export default function Students() {
           </table>
         </div>
       ) : (
-        <p className="text-muted py-8 text-center">
-          No students yet — {user?.role === "admin" ? "add the first student with the button above." : "students added by the admin will appear here."}
-        </p>
+        <EmptyState
+          icon={Users}
+          title="No students yet"
+          description={
+            user?.role === "admin"
+              ? "Add the first student and it will appear here, indexed for instant hash lookup."
+              : "Students added by the admin will appear here."
+          }
+          actionLabel={user?.role === "admin" ? "Add Student" : undefined}
+          onAction={user?.role === "admin" ? () => setOpen(true) : undefined}
+        />
       )}
     </div>
   );

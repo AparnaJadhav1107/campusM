@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { ListOrdered, Flame, MapPin, Route, History } from "lucide-react";
 import { api } from "../services/api.js";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import { useAuthStore, useUIStore } from "../store/index.js";
 
 export function QueuePage() {
   const [data, setData] = useState(null);
   const user = useAuthStore((s) => s.user);
   const toast = useUIStore((s) => s.showToast);
-  const load = () => api("/queue").then(setData).catch((e) => toast(e.message));
+  const load = () => api("/queue").then(setData).catch((e) => toast(e.message, "error"));
   useEffect(load, []);
   if (!data) return <div className="skeleton" />;
 
@@ -35,23 +36,26 @@ export function QueuePage() {
             {i < data.items.length - 1 && <span className="text-primary">→</span>}
           </span>
         ))}
-        {!data.items.length && (
-          <span className="text-muted">
-            Queue is empty — <Link to="/complaints" className="text-primary font-semibold">submit a complaint</Link> and it
-            will be enqueued here.
-          </span>
-        )}
       </div>
+      {!data.items.length && (
+        <EmptyState
+          icon={ListOrdered}
+          title="Queue is empty"
+          description="Pending complaints are enqueued here automatically in FIFO order."
+          actionLabel="Submit a complaint"
+          to="/complaints"
+        />
+      )}
       {user?.role === "admin" && data.items.length > 0 && (
         <button
           className="btn-primary"
           onClick={async () => {
             try {
               const c = await api("/queue/dequeue", { method: "POST", body: "{}" });
-              toast(`Dequeued ${c.complaintId} (FIFO) — now Under Review`);
+              toast(`Dequeued ${c.complaintId} (FIFO) — now Under Review`, "success");
               load();
             } catch (e) {
-              toast(e.message);
+              toast(e.message, "error");
             }
           }}
         >
@@ -66,7 +70,7 @@ export function PriorityPage() {
   const [data, setData] = useState(null);
   const user = useAuthStore((s) => s.user);
   const toast = useUIStore((s) => s.showToast);
-  const load = () => api("/priority-queue").then(setData).catch((e) => toast(e.message));
+  const load = () => api("/priority-queue").then(setData).catch((e) => toast(e.message, "error"));
   useEffect(load, []);
   if (!data) return <div className="skeleton" />;
 
@@ -91,23 +95,26 @@ export function PriorityPage() {
             <span className="badge shrink-0">{c.priority}</span>
           </div>
         ))}
-        {!data.items.length && (
-          <span className="text-muted">
-            No pending complaints — <Link to="/complaints" className="text-primary font-semibold">submit one</Link> and it
-            will be inserted into the heap.
-          </span>
-        )}
       </div>
+      {!data.items.length && (
+        <EmptyState
+          icon={Flame}
+          title="No pending complaints"
+          description="Pending complaints are inserted into the priority heap automatically."
+          actionLabel="Submit a complaint"
+          to="/complaints"
+        />
+      )}
       {user?.role === "admin" && data.items.length > 0 && (
         <button
           className="btn-primary"
           onClick={async () => {
             try {
               const c = await api("/priority-queue/extract", { method: "POST", body: "{}" });
-              toast(`Extracted highest priority: ${c.complaintId} — now Assigned`);
+              toast(`Extracted highest priority: ${c.complaintId} — now Assigned`, "success");
               load();
             } catch (e) {
-              toast(e.message);
+              toast(e.message, "error");
             }
           }}
         >
@@ -136,18 +143,18 @@ export function Resources() {
         setFrom((prev) => prev || g.vertices[0] || "");
         setTo((prev) => prev || g.vertices[1] || g.vertices[0] || "");
       })
-      .catch((e) => toast(e.message));
+      .catch((e) => toast(e.message, "error"));
   useEffect(load, []);
   if (!graph) return <div className="skeleton" />;
 
   const addVertex = async () => {
-    if (!vertexName.trim()) return;
+    if (!vertexName.trim()) return toast("Please enter a location name", "error");
     try {
       setGraph(await api("/campus/graph/vertices", { method: "POST", body: JSON.stringify({ name: vertexName.trim() }) }));
       setVertexName("");
-      toast("Location added to the campus graph");
+      toast("Location added to the campus graph", "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
@@ -159,9 +166,9 @@ export function Resources() {
           body: JSON.stringify({ from: edge.from, to: edge.to, weight: Number(edge.weight) || 1 }),
         })
       );
-      toast("Connection added");
+      toast("Connection added", "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
@@ -169,7 +176,7 @@ export function Resources() {
     try {
       setResult(await api("/campus/graph/shortest-path", { method: "POST", body: JSON.stringify({ from, to }) }));
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 
@@ -183,9 +190,15 @@ export function Resources() {
           Locations and connections are records you create — the graph starts empty and stores everything you add.
         </p>
         {empty ? (
-          <p className="text-muted py-4 text-center">
-            No campus locations yet{isAdmin ? " — add your first location below." : " — the admin has not added any locations yet."}
-          </p>
+          <EmptyState
+            icon={MapPin}
+            title="No campus locations yet"
+            description={
+              isAdmin
+                ? "Add your first location below and the campus graph will start taking shape."
+                : "The admin has not added any campus locations yet."
+            }
+          />
         ) : (
           <>
             <div className="flex flex-wrap gap-1.5">
@@ -280,7 +293,12 @@ export function Resources() {
             )}
           </>
         ) : (
-          <p className="text-muted">Add at least two locations and an edge to compute shortest paths.</p>
+          <EmptyState
+            icon={Route}
+            title="Not enough locations"
+            description="Add at least two locations and an edge between them to compute shortest paths."
+            minHeight={120}
+          />
         )}
       </div>
     </div>
@@ -289,10 +307,15 @@ export function Resources() {
 
 export function Activity() {
   const [data, setData] = useState(null);
+  const toast = useUIStore((s) => s.showToast);
   useEffect(() => {
     api("/activity")
       .then(setData)
-      .catch(() => setData({ items: [] }));
+      .catch((e) => {
+        toast(e.message, "error");
+        setData({ items: [] });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   if (!data) return <div className="skeleton" />;
 
@@ -309,7 +332,11 @@ export function Activity() {
         </div>
       ))}
       {!data.items?.length && (
-        <p className="text-muted py-6 text-center">No activity yet — actions on complaints will be recorded here.</p>
+        <EmptyState
+          icon={History}
+          title="No activity yet"
+          description="Actions on complaints and students will be recorded here in order."
+        />
       )}
     </div>
   );
@@ -321,9 +348,9 @@ export function Settings() {
   const undo = async () => {
     try {
       const c = await api("/undo", { method: "POST", body: "{}" });
-      toast(`Undid last action on ${c.complaintId} — status is now ${c.status}`);
+      toast(`Undid last action on ${c.complaintId} — status is now ${c.status}`, "success");
     } catch (e) {
-      toast(e.message);
+      toast(e.message, "error");
     }
   };
 

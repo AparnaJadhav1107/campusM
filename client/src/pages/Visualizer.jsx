@@ -6,6 +6,10 @@ import LinkedList from "../dsa/LinkedList.js";
 import HashTable from "../dsa/HashTable.js";
 import BinarySearchTree from "../dsa/BinarySearchTree.js";
 import Graph from "../dsa/Graph.js";
+import { useUIStore } from "../store/index.js";
+
+// Validation feedback in the visualizers is a toast, not a log line.
+const toastError = (m) => useUIStore.getState().showToast(m, "error");
 
 /*
  * Every visualizer starts COMPLETELY EMPTY.
@@ -70,7 +74,7 @@ function ArrayViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!value.trim()) return push("Type a value first");
+            if (!value.trim()) return toastError("Type a value first");
             setItems([...items, value.trim()]);
             push(`insert at end: ${value.trim()}`);
           }}
@@ -131,7 +135,7 @@ function StackViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!value.trim()) return push("Type a value first");
+            if (!value.trim()) return toastError("Type a value first");
             stack.push(value.trim());
             push(`push(${value.trim()})`);
             rerender();
@@ -175,7 +179,7 @@ function QueueViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!value.trim()) return push("Type a value first");
+            if (!value.trim()) return toastError("Type a value first");
             queue.enqueue(value.trim());
             push(`enqueue(${value.trim()})`);
             rerender();
@@ -224,7 +228,7 @@ function PriorityQueueViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!label.trim()) return push("Type a label first");
+            if (!label.trim()) return toastError("Type a label first");
             pq.insert({ label: label.trim(), priority });
             push(`insert(${label.trim()}, ${priority}) — heapified`);
             rerender();
@@ -276,7 +280,7 @@ function LinkedListViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!value.trim()) return push("Type a value first");
+            if (!value.trim()) return toastError("Type a value first");
             list.insertAtEnd(value.trim());
             push(`insertAtEnd(${value.trim()})`);
             rerender();
@@ -287,7 +291,7 @@ function LinkedListViz() {
         <button
           className="btn-ghost"
           onClick={() => {
-            if (!value.trim()) return push("Type a value first");
+            if (!value.trim()) return toastError("Type a value first");
             list.insertAtBeginning(value.trim());
             push(`insertAtBeginning(${value.trim()})`);
             rerender();
@@ -329,7 +333,7 @@ function HashTableViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!key.trim()) return push("Type a student ID first");
+            if (!key.trim()) return toastError("Type a student ID first");
             table.set(key.trim(), "Student " + key.trim());
             push(`insert(${key.trim()}) → bucket ${table.hash(key.trim())} (separate chaining on collision)`);
             rerender();
@@ -383,7 +387,7 @@ function BSTViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!value.trim() || Number.isNaN(Number(value))) return push("Type a numeric ID first");
+            if (!value.trim() || Number.isNaN(Number(value))) return toastError("Type a numeric ID first");
             bst.insert(Number(value));
             push(`insert(${value})`);
             rerender();
@@ -462,7 +466,7 @@ function GraphViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!vertex.trim()) return push("Type a location name first");
+            if (!vertex.trim()) return toastError("Type a location name first");
             graph.addVertex(vertex.trim());
             push(`addVertex(${vertex.trim()})`);
             setVertex("");
@@ -489,7 +493,7 @@ function GraphViz() {
         <button
           className="btn-ghost"
           onClick={() => {
-            if (!edge.from || !edge.to) return push("Pick both endpoints first");
+            if (!edge.from || !edge.to) return toastError("Pick both endpoints first");
             graph.addEdge(edge.from, edge.to, Number(edge.weight) || 1);
             push(`addEdge(${edge.from}, ${edge.to}, ${Number(edge.weight) || 1})`);
             rerender();
@@ -514,7 +518,7 @@ function GraphViz() {
         <button
           className="btn-ghost"
           onClick={() => {
-            if (!start) return push("Pick a start vertex first");
+            if (!start) return toastError("Pick a start vertex first");
             setOut("BFS: " + graph.bfs(start).join(" → "));
             push(`BFS from ${start}`);
           }}
@@ -524,7 +528,7 @@ function GraphViz() {
         <button
           className="btn-ghost"
           onClick={() => {
-            if (!start) return push("Pick a start vertex first");
+            if (!start) return toastError("Pick a start vertex first");
             setOut("DFS: " + graph.dfs(start).join(" → "));
             push(`DFS from ${start}`);
           }}
@@ -534,7 +538,7 @@ function GraphViz() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!start || !end) return push("Pick start and end vertices first");
+            if (!start || !end) return toastError("Pick start and end vertices first");
             const r = graph.dijkstra(start, end);
             setOut(`Dijkstra ${start}→${end}: ${r.path.join(" → ") || "no path"} (${r.distance} m)`);
             push("Dijkstra computed");

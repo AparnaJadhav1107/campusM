@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.css";
 
 import Layout from "./components/layout/Layout.jsx";
+import Toasts from "./components/ui/Toast.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import { Login, Register } from "./pages/Auth.jsx";
 import Students from "./pages/Students.jsx";
@@ -38,5 +39,7 @@ createRoot(document.getElementById("root")).render(
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    {/* Toast viewport lives at the root so it also works on Login/Register */}
+    <Toasts />
   </BrowserRouter>
 );

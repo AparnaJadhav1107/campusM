@@ -96,7 +96,7 @@ function SidebarBody({ onNavigate }) {
 
 export default function Layout() {
   const { user } = useAuthStore();
-  const { sidebarOpen, setSidebar, toast } = useUIStore();
+  const { sidebarOpen, setSidebar } = useUIStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -213,11 +213,6 @@ export default function Layout() {
         </main>
       </div>
 
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-[60] bg-ink text-white px-4 py-2.5 rounded-lg toast-in shadow-xl text-[13px] max-w-[86vw]">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

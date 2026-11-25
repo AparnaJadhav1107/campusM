@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 import { api } from "../services/api.js";
-import { useAuthStore } from "../store/index.js";
+import { useAuthStore, useUIStore } from "../store/index.js";
 
 function Shell({ children, title, sub }) {
   return (
@@ -24,18 +24,20 @@ function Shell({ children, title, sub }) {
 
 export function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
+  const toast = useUIStore((s) => s.showToast);
 
   const go = async (e) => {
     e.preventDefault();
+    if (!form.email.trim() || !form.password) return toast("Please enter your email and password", "error");
     try {
       const data = await api("/auth/login", { method: "POST", body: JSON.stringify(form) });
       login(data.user, data.token);
+      toast(`Welcome back, ${data.user.name}`, "success");
       navigate("/");
     } catch (x) {
-      setError(x.message);
+      toast(x.message, "error");
     }
   };
 
@@ -55,7 +57,6 @@ export function Login() {
           value={form.password}
           onChange={(x) => setForm({ ...form, password: x.target.value })}
         />
-        {error && <p className="text-danger">{error}</p>}
         <button className="btn-primary w-full">Login</button>
       </form>
       <p className="text-muted mt-4">
@@ -70,18 +71,21 @@ export function Login() {
 
 export function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState("");
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
+  const toast = useUIStore((s) => s.showToast);
 
   const go = async (e) => {
     e.preventDefault();
+    if (!form.name.trim() || !form.email.trim() || !form.password)
+      return toast("Please fill in your name, email and password", "error");
     try {
       const data = await api("/auth/register", { method: "POST", body: JSON.stringify(form) });
       login(data.user, data.token);
+      toast("Account created — welcome to Smart Campus", "success");
       navigate("/");
     } catch (x) {
-      setError(x.message);
+      toast(x.message, "error");
     }
   };
 
@@ -107,7 +111,6 @@ export function Register() {
           value={form.password}
           onChange={(x) => setForm({ ...form, password: x.target.value })}
         />
-        {error && <p className="text-danger">{error}</p>}
         <button className="btn-primary w-full">Register</button>
       </form>
       <p className="text-muted mt-4">

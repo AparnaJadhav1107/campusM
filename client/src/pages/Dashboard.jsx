@@ -14,37 +14,23 @@ import {
   CartesianGrid,
 } from "recharts";
 import { api } from "../services/api.js";
+import { useUIStore } from "../store/index.js";
+import EmptyState from "../components/ui/EmptyState.jsx";
 
 const COLORS = ["#FF8900", "#FFAA45", "#FFC078", "#C97B12", "#16A36A", "#EF4444"];
-
-function EmptyNote({ children }) {
-  return (
-    <div className="flex flex-col items-center justify-center text-center py-8 text-muted">
-      <Inbox size={22} className="mb-2 text-lightorange" />
-      <div className="text-[13px]">{children}</div>
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [range, setRange] = useState(30);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
+  const toast = useUIStore((s) => s.showToast);
 
   useEffect(() => {
     api("/dashboard/overview")
       .then(setData)
-      .catch((e) => setError(e.message));
+      .catch((e) => toast(`Could not load dashboard: ${e.message}`, "error"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  if (error) {
-    return (
-      <div className="card text-danger">
-        Could not load dashboard: {error}. Is the server running on the VITE_API_URL?
-      </div>
-    );
-  }
   if (!data) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -85,7 +71,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Complaint analytics — real trend from the API */}
-        <div className="card xl:col-span-2">
+        <div className="card xl:col-span-2 h-full flex flex-col min-w-0">
           <div className="flex items-center justify-between mb-2">
             <h3 className="card-title">Complaint Analytics</h3>
             <select
@@ -99,6 +85,7 @@ export default function Dashboard() {
             </select>
           </div>
           {trend.length ? (
+            <div className="flex-1 min-w-0">
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0ebe3" />
@@ -109,21 +96,23 @@ export default function Dashboard() {
                 <Line type="monotone" dataKey="resolved" stroke="#FFAA45" strokeDasharray="5 5" name="Resolved" />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           ) : (
-            <EmptyNote>
-              No complaints yet — the trend chart will appear once complaints are submitted.
-              <button className="btn-primary mt-3" onClick={() => navigate("/complaints")}>
-                Submit your first complaint
-              </button>
-            </EmptyNote>
+            <EmptyState
+              icon={Inbox}
+              title="No complaints yet"
+              description="The trend chart will appear here once complaints are submitted."
+              actionLabel="Submit your first complaint"
+              onAction={() => navigate("/complaints")}
+            />
           )}
         </div>
 
         {/* Resolution target — computed rate, only meaningful with real data */}
-        <div className="card">
+        <div className="card h-full flex flex-col min-w-0">
           <h3 className="card-title">Complaint Resolution Target</h3>
           {hasComplaints ? (
-            <>
+            <div className="flex-1 flex flex-col justify-center">
               <div className="relative w-[132px] h-[132px] mx-auto my-3">
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
                   <circle cx="50" cy="50" r="42" fill="none" stroke="#FFE9D2" strokeWidth="11" />
@@ -156,19 +145,24 @@ export default function Dashboard() {
                   <b>{data.resolutionRate}%</b>
                 </div>
               </div>
-            </>
+            </div>
           ) : (
-            <EmptyNote>No complaints yet — resolution rate will appear here.</EmptyNote>
+            <EmptyState
+              icon={CheckCircle2}
+              title="No complaints yet"
+              description="The resolution rate will appear here once complaints are submitted."
+            />
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Students by department — real student records */}
-        <div className="card">
+        <div className="card h-full flex flex-col min-w-0">
           <h3 className="card-title mb-3">Students by Department</h3>
           {data.studentsByDepartment.length ? (
-            data.studentsByDepartment.map((d) => (
+            <div className="flex-1">
+            {data.studentsByDepartment.map((d) => (
               <div key={d.name} className="mb-2.5">
                 <div className="flex justify-between text-[12px]">
                   <span>{d.name}</span>
@@ -178,22 +172,25 @@ export default function Dashboard() {
                   <div className="progress-bar" style={{ width: `${(d.value / maxDept) * 100}%` }} />
                 </div>
               </div>
-            ))
+            ))}
+            </div>
           ) : (
-            <EmptyNote>
-              No students yet.
-              <Link to="/students" className="text-primary font-semibold block mt-1">
-                Add the first student
-              </Link>
-            </EmptyNote>
+            <EmptyState
+              icon={Users}
+              title="No students yet"
+              description="Students added by the admin will be grouped here by department."
+              actionLabel="Go to Students"
+              to="/students"
+            />
           )}
         </div>
 
         {/* Processing funnel — exact real counts per status */}
-        <div className="card">
+        <div className="card h-full flex flex-col min-w-0">
           <h3 className="card-title mb-3">Complaint Processing Funnel</h3>
           {hasComplaints ? (
-            data.funnel.map((f, i) => (
+            <div className="flex-1">
+            {data.funnel.map((f, i) => (
               <div key={f.stage} className="mb-2">
                 <div className="flex justify-between text-[12px]">
                   <span>{f.stage}</span>
@@ -210,17 +207,22 @@ export default function Dashboard() {
                   />
                 </div>
               </div>
-            ))
+            ))}
+            </div>
           ) : (
-            <EmptyNote>No complaints yet — the funnel fills as complaints move through statuses.</EmptyNote>
+            <EmptyState
+              icon={Inbox}
+              title="No complaints yet"
+              description="The funnel fills as complaints move through their statuses."
+            />
           )}
         </div>
 
         {/* Categories donut — real distribution */}
-        <div className="card">
+        <div className="card h-full flex flex-col min-w-0">
           <h3 className="card-title">Complaint Categories</h3>
           {data.categories.length ? (
-            <>
+            <div className="flex-1">
               <ResponsiveContainer width="100%" height={168}>
                 <PieChart>
                   <Pie data={data.categories} dataKey="value" innerRadius={48} outerRadius={70} paddingAngle={3}>
@@ -243,16 +245,20 @@ export default function Dashboard() {
                   <b>{c.value}</b>
                 </div>
               ))}
-            </>
+            </div>
           ) : (
-            <EmptyNote>No complaints yet — categories will appear here.</EmptyNote>
+            <EmptyState
+              icon={MessageSquareWarning}
+              title="No complaints yet"
+              description="Category distribution will appear here once complaints are submitted."
+            />
           )}
         </div>
       </div>
 
       {/* Recent complaints */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-1">
+      <div className="card flex flex-col min-w-0">
+        <div className="flex items-center justify-between mb-1 shrink-0">
           <h3 className="card-title">Recent Complaints</h3>
           <Link to="/complaints" className="text-primary text-[12px] font-semibold">
             See All
@@ -294,12 +300,13 @@ export default function Dashboard() {
             </table>
           </div>
         ) : (
-          <EmptyNote>
-            No complaints yet — submit your first complaint.
-            <button className="btn-primary mt-3" onClick={() => navigate("/complaints")}>
-              Submit a complaint
-            </button>
-          </EmptyNote>
+          <EmptyState
+            icon={Inbox}
+            title="No complaints yet"
+            description="Recently submitted complaints will appear here."
+            actionLabel="Submit a complaint"
+            onAction={() => navigate("/complaints")}
+          />
         )}
       </div>
 

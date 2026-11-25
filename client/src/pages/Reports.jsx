@@ -13,8 +13,10 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { BarChart3 } from "lucide-react";
 import { api, csvUrl } from "../services/api.js";
-import { useAuthStore } from "../store/index.js";
+import { useAuthStore, useUIStore } from "../store/index.js";
+import EmptyState from "../components/ui/EmptyState.jsx";
 
 const COLORS = ["#FF8900", "#FFAA45", "#FFC078", "#16A36A", "#EF4444"];
 const RANGES = [
@@ -28,23 +30,32 @@ export default function Reports() {
   const [data, setData] = useState(null);
   const [range, setRange] = useState(30);
   const token = useAuthStore((s) => s.token);
+  const toast = useUIStore((s) => s.showToast);
 
   const load = () => {
     const from =
       range === "today"
         ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
         : new Date(Date.now() - range * 86400000).toISOString();
-    api(`/reports?from=${from}`).then(setData);
+    api(`/reports?from=${from}`)
+      .then(setData)
+      .catch((e) => toast(e.message, "error"));
   };
   useEffect(load, [range]);
 
   const download = async () => {
-    const response = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}` } });
-    const blob = await response.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "complaints-report.csv";
-    a.click();
+    try {
+      const response = await fetch(csvUrl, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error(`Export failed (server ${response.status})`);
+      const blob = await response.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "complaints-report.csv";
+      a.click();
+      toast("Report exported as CSV", "success");
+    } catch (e) {
+      toast(e.message, "error");
+    }
   };
 
   if (!data) return <div className="skeleton" />;
@@ -84,8 +95,14 @@ export default function Reports() {
       </div>
 
       {empty ? (
-        <div className="card text-muted text-center py-10">
-          No complaints in this range — reports are computed live from real complaint records.
+        <div className="card flex flex-col">
+          <EmptyState
+            icon={BarChart3}
+            title="No complaints in this range"
+            description="Reports are computed live from real complaint records — try a wider range or submit a complaint."
+            actionLabel="Go to Complaints"
+            to="/complaints"
+          />
         </div>
       ) : (
         <div className="grid lg:grid-cols-2 gap-4">
@@ -115,7 +132,12 @@ export default function Reports() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-muted py-8 text-center">No department data yet.</p>
+              <EmptyState
+                icon={BarChart3}
+                title="No department data yet"
+                description="Department-wise breakdown appears once complaints are linked to students."
+                minHeight={180}
+              />
             )}
           </div>
           <div className="card lg:col-span-2">
